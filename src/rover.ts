@@ -4,6 +4,13 @@ const canvas = document.querySelector<HTMLCanvasElement>("#rover-canvas")!;
 const ctx = canvas.getContext("2d")!;
 const readout = document.querySelector<HTMLParagraphElement>("#rover-readout")!;
 
+const pendingList = document.querySelector<HTMLOListElement>("#rover-pending")!;
+const queueStatus = document.querySelector<HTMLParagraphElement>(
+  "#rover-queue-status",
+)!;
+const runButton = document.querySelector<HTMLButtonElement>("#rover-run")!;
+const clearButton = document.querySelector<HTMLButtonElement>("#rover-clear")!;
+
 type Directions = {
   heading: string;
   move_x: number;
@@ -21,11 +28,15 @@ let x = 2;
 let y = 2;
 let direction = 0;
 
+let queue: Command[] = [];
+
 type Command = {
+  label: string;
   execute: () => void;
 };
 
 const forward: Command = {
+  label: "Forward",
   execute: () => {
     const current = table[direction];
 
@@ -37,6 +48,7 @@ const forward: Command = {
 };
 
 const right: Command = {
+  label: "Right",
   execute: () => {
     direction = (direction + 1) % 4;
     drawRover();
@@ -67,16 +79,47 @@ function drawRover() {
   }`;
 }
 
+function drawQueue() {
+  pendingList.replaceChildren();
+
+  for (const command of queue) {
+    const item = document.createElement("li");
+    item.textContent = command.label;
+    pendingList.appendChild(item);
+  }
+
+  queueStatus.textContent = `${queue.length} commands pending`;
+
+  runButton.disabled = queue.length === 0;
+  clearButton.disabled = queue.length === 0;
+}
+
 document.querySelector<HTMLButtonElement>("#rover-forward")!.onclick = () => {
-  forward.execute();
+  queue.push(forward);
+  drawQueue();
 };
 document.querySelector<HTMLButtonElement>("#rover-right")!.onclick = () => {
-  right.execute();
+  queue.push(right);
+  drawQueue();
 };
 document.querySelector<HTMLButtonElement>("#rover-reset")!.onclick = () => {
   x = 2;
   y = 2;
   direction = 0;
+  queue = [];
   drawRover();
+  drawQueue();
+};
+document.querySelector<HTMLButtonElement>("#rover-run")!.onclick = () => {
+  while (queue.length > 0) {
+    const command = queue.shift()!;
+    command.execute();
+  }
+  drawQueue();
+};
+document.querySelector<HTMLButtonElement>("#rover-clear")!.onclick = () => {
+  queue = [];
+  drawQueue();
 };
 drawRover();
+drawQueue();
