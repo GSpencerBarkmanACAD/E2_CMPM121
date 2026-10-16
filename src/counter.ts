@@ -34,8 +34,8 @@ function drawMeter() {
   const current_shield = shieldSnapshot();
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  for (let i = 0; i < 10; i++) {
-    ctx.fillStyle = i < count ? "#27766b" : "#c9d2c9";
+  for (let i = 0; i < current_shield.capacity; i++) {
+    ctx.fillStyle = i < current_shield.current ? "#27766b" : "#c9d2c9";
     ctx.fillRect(12 + i * 28, 24, 24, 48);
   }
 
@@ -53,10 +53,6 @@ function drawMeter() {
 function updateStats() {
   panelUpdates++;
   diagnostic.textContent = `Inspector deliveries: ${panelUpdates}`;
-  renderStats();
-}
-
-function renderStats() {
   if (!panel) return;
 
   const shield = shieldSnapshot();
@@ -70,8 +66,6 @@ function setCount(next: number) {
   count = bounded;
 
   modelChanges.dispatchEvent(new Event("Shield Changed"));
-
-  if (panel) updateStats();
 }
 
 modelChanges.addEventListener("Shield Changed", () => {
@@ -91,10 +85,18 @@ document.querySelector<HTMLButtonElement>("#counter-open")!.onclick = () => {
   if (panel) return;
   panel = document.createElement("p");
   host.append(panel);
-  renderStats();
+
+  const shield = shieldSnapshot();
+  panel.textContent =
+    `Shield charge: ${shield.current} · Missing charge: ${shield.missing}`;
+
+  modelChanges.addEventListener("Shield Changed", updateStats);
 };
 document.querySelector<HTMLButtonElement>("#counter-close")!.onclick = () => {
   if (!panel) return;
+
+  modelChanges.removeEventListener("Shield Changed", updateStats);
+
   panel.remove();
   panel = null;
 };
