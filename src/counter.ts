@@ -14,6 +14,8 @@ let count = 0;
 let panel: HTMLParagraphElement | null = null;
 let panelUpdates = 0;
 
+const modelChanges = new EventTarget();
+
 type Snapshot = {
   current: number;
   capacity: number;
@@ -66,9 +68,15 @@ function setCount(next: number) {
   const bounded = Math.max(0, Math.min(10, next));
   if (bounded === count) return;
   count = bounded;
-  drawMeter();
+
+  modelChanges.dispatchEvent(new Event("Shield Changed"));
+
   if (panel) updateStats();
 }
+
+modelChanges.addEventListener("Shield Changed", () => {
+  drawMeter();
+});
 
 document.querySelector<HTMLButtonElement>("#counter-less")!.onclick = () => {
   setCount(count - 1);
